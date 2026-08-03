@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Utter — Open Source Text to Speech (MP3 download)</title>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9K7V2BCFHD"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-9K7V2BCFHD');
+</script>
+<!-- End Google Analytics -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1626; --bg-soft:#121D33; --surface:#17233D; --line:#2A3A5C;
+    --ink:#EDEFF4; --ink-dim:#9AA6C0; --amber:#F5A623; --amber-dim:#B87A17; --cyan:#5EEAD4; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:radial-gradient(circle at 15% 0%, #16213C 0%, var(--bg) 55%); color:var(--ink); font-family:'Inter',system-ui,sans-serif;}
+  .wrap{max-width:980px; margin:0 auto; padding:48px 24px 80px;}
+  header{display:flex; align-items:center; justify-content:space-between; margin-bottom:40px;}
+  .logo{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;}
+  .logo-mark{width:28px; height:28px; border-radius:8px; background:var(--amber); display:flex; align-items:center; justify-content:center; color:#1a1305; font-weight:700;}
+  .tag{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); border:1px solid rgba(94,234,212,0.3); background:rgba(94,234,212,0.06); padding:5px 10px; border-radius:20px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-size:38px; margin:0 0 10px;}
+  h1 span{color:var(--amber);}
+  .sub{color:var(--ink-dim); margin:0 0 32px; max-width:600px; line-height:1.6;}
+  .app{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:28px;}
+  textarea{width:100%; min-height:150px; resize:vertical; background:var(--bg-soft); border:1px solid var(--line); color:var(--ink); font-size:16px; line-height:1.6; padding:16px; border-radius:10px; outline:none; font-family:'Inter',sans-serif;}
+  textarea:focus{border-color:var(--amber);}
+  .meta-row{display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:var(--ink-dim); font-family:'JetBrains Mono',monospace;}
+  .controls{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:24px 0;}
+  @media (max-width:720px){.controls{grid-template-columns:1fr;}}
+  .field label{display:block; font-size:12px; color:var(--ink-dim); margin-bottom:8px; font-family:'JetBrains Mono',monospace; text-transform:uppercase;}
+  select{width:100%; background:var(--bg-soft); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:14px;}
+  input[type=range]{width:100%; accent-color:var(--amber);}
+  .slider-val{color:var(--cyan); font-family:'JetBrains Mono',monospace; font-size:12px;}
+  .actions{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  button{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px; border:none; cursor:pointer; border-radius:30px; padding:14px 26px;}
+  #genBtn{background:var(--amber); color:#1a1305;}
+  #genBtn:disabled{opacity:0.5; cursor:not-allowed;}
+  #downloadBtn{background:transparent; color:var(--ink); border:1px solid var(--line); text-decoration:none; display:inline-flex; align-items:center;}
+  #downloadBtn.ready{border-color:var(--cyan); color:var(--cyan);}
+  #downloadBtn.disabled{opacity:0.4; pointer-events:none;}
+  audio{width:100%; margin-top:20px; display:none;}
+  .status{margin-top:14px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ink-dim); min-height:18px;}
+  footer{margin-top:36px; text-align:center; color:var(--ink-dim); font-size:13px; font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="logo-mark">U</span> Utter</div>
+    <div class="tag">open source · self-hosted · $0 cost</div>
+  </header>
+
+  <h1>Type it. <span>Download</span> the MP3.</h1>
+  <p class="sub">This version runs on a real backend (Flask + espeak-ng + ffmpeg) — all open source, no API keys, no monthly bill. Every request generates an actual MP3 file you can play or download.</p>
+
+  <div class="app">
+    <textarea id="textInput" placeholder="Type something here...">Welcome to Utter. This audio file was generated completely with open source software.</textarea>
+    <div class="meta-row">
+      <span id="charCount">0 characters</span>
+      <span>max 5000 characters</span>
+    </div>
+
+    <div class="controls">
+      <div class="field">
+        <label for="voiceSelect">Voice</label>
+        <select id="voiceSelect">
+          <option value="en-us-male">English (US)</option>
+          <option value="en-gb-male">English (UK)</option>
+          <option value="en-scotland">English (Scotland)</option>
+          <option value="hindi-male">Hindi</option>
+          <option value="hindi-mbrola-1">Hindi (Mbrola 1)</option>
+          <option value="hindi-mbrola-2">Hindi (Mbrola 2)</option>
+          <option value="spanish">Spanish</option>
+          <option value="french">French</option>
+          <option value="german">German</option>
+          <option value="arabic">Arabic</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Speed — <span class="slider-val" id="rateVal">175 wpm</span></label>
+        <input type="range" id="rate" min="80" max="300" step="5" value="175">
+      </div>
+      <div class="field">
+        <label>Pitch — <span class="slider-val" id="pitchVal">50</span></label>
+        <input type="range" id="pitch" min="0" max="99" step="1" value="50">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="genBtn">▶ Generate speech</button>
+      <a id="downloadBtn" class="disabled" href="#" download="utter-speech.mp3">⬇ Download MP3</a>
+    </div>
+    <div class="status" id="statusMsg"></div>
+    <audio id="player" controls></audio>
+  </div>
+
+  <footer>Backend: Flask · Engine: espeak-ng (GPL) · Encoder: ffmpeg — all open source, zero API cost</footer>
+</div>
+
+<script>
+  // ⚠️ IMPORTANT: Replace this with your actual Railway backend URL after deploying it.
+  // Example: "https://utter-backend-production.up.railway.app"
+  const API_BASE_URL = "https://YOUR-RAILWAY-BACKEND-URL.up.railway.app";
+
+  const textInput = document.getElementById('textInput');
+  const charCount = document.getElementById('charCount');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const rate = document.getElementById('rate');
+  const pitch = document.getElementById('pitch');
+  const rateVal = document.getElementById('rateVal');
+  const pitchVal = document.getElementById('pitchVal');
+  const genBtn = document.getElementById('genBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const statusMsg = document.getElementById('statusMsg');
+  const player = document.getElementById('player');
+
+  textInput.addEventListener('input', ()=> charCount.textContent = textInput.value.length + ' characters');
+  charCount.textContent = textInput.value.length + ' characters';
+  rate.addEventListener('input', ()=> rateVal.textContent = rate.value + ' wpm');
+  pitch.addEventListener('input', ()=> pitchVal.textContent = pitch.value);
+
+  let currentUrl = null;
+
+  genBtn.addEventListener('click', async () => {
+    const text = textInput.value.trim();
+    if(!text){ statusMsg.textContent = 'Type something first.'; return; }
+
+    genBtn.disabled = true;
+    statusMsg.textContent = 'Generating audio on the server…';
+    downloadBtn.classList.add('disabled');
+
+    try {
+      const res = await fetch(API_BASE_URL + '/api/tts', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          text,
+          voice: voiceSelect.value,
+          rate: parseInt(rate.value),
+          pitch: parseInt(pitch.value)
+        })
+      });
+
+      if(!res.ok){
+        const err = await res.json().catch(()=>({error:'Unknown error'}));
+        statusMsg.textContent = 'Error: ' + (err.error || res.statusText);
+        genBtn.disabled = false;
+        return;
+      }
+
+      const blob = await res.blob();
+      if(currentUrl) URL.revokeObjectURL(currentUrl);
+      currentUrl = URL.createObjectURL(blob);
+
+      player.src = currentUrl;
+      player.style.display = 'block';
+      player.play();
+
+      downloadBtn.href = currentUrl;
+      downloadBtn.classList.remove('disabled');
+      downloadBtn.classList.add('ready');
+
+      statusMsg.textContent = 'Done — MP3 ready to play or download.';
+    } catch(e){
+      statusMsg.textContent = 'Network error: ' + e.message;
+    } finally {
+      genBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
